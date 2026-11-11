@@ -1,0 +1,46 @@
+/*
+ * X Ad Hider: all hiding is done here. content.js only *tags* elements with
+ * data-xah-cat="<category>" and toggles classes on <html>:
+ *   xah-on            master switch
+ *   xah-debug         outline instead of hide
+ *   xah-opt-premium   Premium / Verified upsells
+ *   xah-opt-sidecards sidebar Subscribe / Get Verified cards
+ *   xah-opt-suggest   Who to follow / Relevant people / Topics modules
+ *   xah-opt-grok      Grok entry points
+ * Nodes are never removed, so React's virtualized list keeps working.
+ */
+
+/* ---- Tagged by content.js ---------------------------------------------- */
+html.xah-on:not(.xah-debug) [data-xah-cat="ad"],
+html.xah-on.xah-opt-premium:not(.xah-debug) [data-xah-cat="premium"],
+html.xah-on.xah-opt-sidecards:not(.xah-debug) [data-xah-cat="sidecards"],
+html.xah-on.xah-opt-suggest:not(.xah-debug) [data-xah-cat="suggest"],
+html.xah-on.xah-opt-grok:not(.xah-debug) [data-xah-cat="grok"] {
+  display: none !important;
+}
+
+/* ---- CSS-only rules (apply before content.js runs, so nothing flashes) --- */
+html.xah-on.xah-opt-premium:not(.xah-debug) a[href^="/i/premium"],
+html.xah-on.xah-opt-premium:not(.xah-debug) a[href^="/i/verified"],
+html.xah-on.xah-opt-sidecards:not(.xah-debug) [data-testid="sidebarColumn"] aside:has(a[href^="/i/premium"]),
+html.xah-on.xah-opt-sidecards:not(.xah-debug) [data-testid="sidebarColumn"] aside:has(a[href^="/i/verified"]),
+html.xah-on.xah-opt-grok:not(.xah-debug) a[href^="/i/grok"],
+html.xah-on.xah-opt-grok:not(.xah-debug) [data-testid="GrokDrawer"] {
+  display: none !important;
+}
+
+/* ---- Debug mode: outline exactly what would be hidden ------------------- */
+html.xah-on.xah-debug [data-xah-cat="ad"],
+html.xah-on.xah-debug.xah-opt-premium [data-xah-cat="premium"],
+html.xah-on.xah-debug.xah-opt-sidecards [data-xah-cat="sidecards"],
+html.xah-on.xah-debug.xah-opt-suggest [data-xah-cat="suggest"],
+html.xah-on.xah-debug.xah-opt-grok [data-xah-cat="grok"],
+html.xah-on.xah-debug.xah-opt-premium a[href^="/i/premium"],
+html.xah-on.xah-debug.xah-opt-premium a[href^="/i/verified"],
+html.xah-on.xah-debug.xah-opt-sidecards [data-testid="sidebarColumn"] aside:has(a[href^="/i/premium"]),
+html.xah-on.xah-debug.xah-opt-sidecards [data-testid="sidebarColumn"] aside:has(a[href^="/i/verified"]),
+html.xah-on.xah-debug.xah-opt-grok a[href^="/i/grok"],
+html.xah-on.xah-debug.xah-opt-grok [data-testid="GrokDrawer"] {
+  outline: 2px solid #ff0000 !important;
+  outline-offset: -2px !important;
+}

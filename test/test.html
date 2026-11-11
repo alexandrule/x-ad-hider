@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RUNNING</title>
+<link rel="stylesheet" href="../content.css">
+<script>
+// ---------------------------------------------------------------------------
+// chrome.* stub. Mirrors only the API surface content.js is allowed to use.
+// Settings arrive asynchronously (50 ms) so we can check the early
+// "assume on" behaviour before they load.
+// ---------------------------------------------------------------------------
+window.__stub = {
+  sync: { enabled: true, debug: false, optPremium: false, optSidecards: false, optSuggest: false, optGrok: false },
+  local: {},
+  localSets: [],
+  changeListeners: [],
+  messageListeners: [],
+};
+function pick(store, keys) {
+  if (keys == null) return { ...store };
+  if (typeof keys === 'string') keys = [keys];
+  if (Array.isArray(keys)) { const o = {}; keys.forEach(k => { if (k in store) o[k] = store[k]; }); return o; }
+  const o = { ...keys }; Object.keys(keys).forEach(k => { if (k in store) o[k] = store[k]; }); return o;
+}
+function area(name, delay) {
+  return {
+    get(keys, cb) {
+      const p = new Promise(r => setTimeout(() => r(pick(__stub[name], keys)), delay));
+      if (cb) p.then(cb); return p;
+    },
+    set(obj, cb) {
+      Object.assign(__stub[name], obj);
+      if (name === 'local') __stub.localSets.push({ ...obj });
+      const p = Promise.resolve(); if (cb) p.then(cb); return p;
+    },
+  };
+}
+window.chrome = {
+  storage: {
+    sync: area('sync', 50),
+    local: area('local', 0),
+    onChanged: { addListener(fn) { __stub.changeListeners.push(fn); } },
+  },
+  runtime: { onMessage: { addListener(fn) { __stub.messageListeners.push(fn); } } },
+};
+// Simulates the popup flipping a setting.
+window.__setSetting = function (key, value) {
+  const oldValue = __stub.sync[key];
+  __stub.sync[key] = value;
+  __stub.changeListeners.forEach(fn => fn({ [key]: { oldValue, newValue: value } }, 'sync'));
+};
+window.__ask = function (msg) {
+  return new Promise(resolve => {
+    let async = false;
+    for (const fn of __stub.messageListeners) {
+      const ret = fn(msg, {}, resolve);
+      if (ret === true) async = true;
+    }
+    if (!async) setTimeout(() => resolve(undefined), 0);
+  });
+};
+// Spy: content.js must never rescan the whole document after start-up.
+window.__docQSA = 0;
+const _qsa = Document.prototype.querySelectorAll;
+Document.prototype.querySelectorAll = function (...a) { window.__docQSA++; return _qsa.apply(this, a); };
+</script>
+<!-- Loaded in <head>, before #react-root exists, like document_start. -->
+<script src="../content.js"></script>
+<script>window.__earlyOn = document.documentElement.classList.contains('xah-on');</script>
+</head>
+<body>
+<div id="react-root">
+ <nav aria-label="Primary">
+  <a id="nav-home" href="/home"><span>Home</span></a>
+  <a id="nav-grok" href="/i/grok" aria-label="Grok"><span>Grok</span></a>
+  <a id="nav-premium" href="/i/premium_sign_up" aria-label="Premium"><span>Premium</span></a>
+ </nav>
+ <main>
+  <div aria-label="Timeline: Your Home Timeline">
+   <div id="timeline" style="position:relative">
+
+    <!-- 1. Organic post -->
+    <div data-testid="cellInnerDiv" id="organic-1"><div><div>
+     <article data-testid="tweet" role="article">
+      <div data-testid="User-Name"><div><a href="/alice"><span>Alice</span></a></div>
+       <div><a href="/alice"><span>@alice</span></a><span>·</span><a href="/alice/status/101"><time datetime="2026-11-11T10:00:00.000Z">2h</time></a></div></div>
+      <div data-testid="tweetText"><span>Just an ordinary post.</span></div>
+     </article></div></div></div>
+
+    <!-- 2. Promoted post: "Ad" label in header, placementTracking, no timestamp -->
+    <div data-testid="cellInnerDiv" id="ad-label"><div><div>
+     <article data-testid="tweet" role="article">
+      <div data-testid="User-Name"><div><a href="/acme"><span>Acme Corp</span></a></div><div><a href="/acme"><span>@acme</span></a></div></div>
+      <div><span>Ad</span><button data-testid="caret" aria-label="More"></button></div>
+      <div data-testid="tweetText"><span>Buy our stuff.</span></div>
+      <div data-testid="placementTracking"><div>video</div></div>
+     </article></div></div></div>
+
+    <!-- 3. Organic post whose text is exactly "Ad" -->
+    <div data-testid="cellInnerDiv" id="organic-text-ad"><div><div>
+     <article data-testid="tweet" role="article">
+      <div data-testid="User-Name"><div><a href="/bob"><span>Bob</span></a></div>
+       <div><a href="/bob"><span>@bob</span></a><a href="/bob/status/102"><time datetime="2026-11-11T09:00:00.000Z">3h</time></a></div></div>
+      <div data-testid="tweetText"><span>Ad</span></div>
+     </article></div></div></div>
+
+    <!-- 4. Organic post from a user whose display name is "Promoted" -->
+    <div data-testid="cellInnerDiv" id="organic-name-promoted"><div><div>
+     <article data-testid="tweet" role="article">
+      <div data-testid="User-Name"><div><a href="/promoted"><span>Promoted</span></a></div>
+       <div><a href="/promoted"><span>@promoted</span></a><a href="/promoted/status/103"><time datetime="2026-11-11T08:00:00.000Z">4h</time></a></div></div>
+      <div data-testid="tweetText"><span>hello</span></div>
+     </article></div></div></div>
+
+    <!-- 5. Organic video post: placementTracking but has a timestamp, no label -->
+    <div data-testid="cellInnerDiv" id="organic-video"><div><div>
+     <article data-testid="tweet" role="article">
+      <div data-testid="User-Name"><div><a href="/carol"><span>Carol</span></a></div>
+       <div><a href="/carol"><span>@carol</span></a><a href="/carol/status/104"><time datetime="2026-11-11T07:00:00.000Z">5h</time></a></div></div>
+      <div data-testid="tweetText"><span>Watch this</span></div>
+      <div data-testid="placementTracking"><div>video</div></div>
+     </article></div></div></div>
+
+    <!-- 6. Promoted post: structural only (placementTracking + no timestamp, label missing) -->
+    <div data-testid="cellInnerDiv" id="ad-structural"><div><div>
+     <article data-testid="tweet" role="article">
+      <div data-testid="User-Name"><div><a href="/brand"><span>Brand</span></a></div><div><a href="/brand"><span>@brand</span></a></div></div>
+      <div data-testid="tweetText"><span>Sale!</span></div>
+      <div data-testid="placementTracking"><div>card</div></div>
+     </article></div></div></div>
+
+    <!-- 7. Promoted post with a localized label (RU) while the page is EN -> fallback to all languages -->
+    <div data-testid="cellInnerDiv" id="ad-ru"><div><div>
+     <article data-testid="tweet" role="article">
+      <div data-testid="User-Name"><div><a href="/ru"><span>Компания</span></a></div><div><a href="/ru"><span>@ru</span></a></div></div>
+      <div><span>Реклама</span></div>
+      <div data-testid="tweetText"><span>Купите</span></div>
+     </article></div></div></div>
+
+    <!-- 8. Old-style "Promoted" footer label -->
+    <div data-testid="cellInnerDiv" id="ad-promoted-footer"><div><div>
+     <article data-testid="tweet" role="article">
+      <div data-testid="User-Name"><div><a href="/old"><span>Old Brand</span></a></div><div><a href="/old"><span>@old</span></a></div></div>
+      <div data-testid="tweetText"><span>Old-style ad</span></div>
+      <div><svg></svg><span>Promoted</span></div>
+     </article></div></div></div>
+
+    <!-- 9. Organic quote post; the quoted post text is exactly "Promoted" -->
+    <div data-testid="cellInnerDiv" id="organic-quote"><div><div>
+     <article data-testid="tweet" role="article">
+      <div data-testid="User-Name"><div><a href="/dan"><span>Dan</span></a></div>
+       <div><a href="/dan"><span>@dan</span></a><a href="/dan/status/105"><time datetime="2026-11-11T06:00:00.000Z">6h</time></a></div></div>
+      <div data-testid="tweetText"><span>lol</span></div>
+      <div role="link" tabindex="0"><div data-testid="User-Name"><span>Eve</span></div><div data-testid="tweetText"><span>Promoted</span></div></div>
+     </article></div></div></div>
+
+    <!-- 10. "Who to follow" module: heading, two users, show more, then a normal post -->
+    <div data-testid="cellInnerDiv" id="wtf-head"><div><h2 role="heading"><span>Who to follow</span></h2></div></div>
+    <div data-testid="cellInnerDiv" id="wtf-user1"><div><button data-testid="UserCell"><a href="/u1"><span>User One</span></a></button></div></div>
+    <div data-testid="cellInnerDiv" id="wtf-user-promoted"><div><button data-testid="UserCell"><a href="/u2"><span>User Two</span></a><div><span>Promoted</span></div></button></div></div>
+    <div data-testid="cellInnerDiv" id="wtf-more"><div><a href="/i/connect_people"><span>Show more</span></a></div></div>
+    <div data-testid="cellInnerDiv" id="organic-after-wtf"><div><div>
+     <article data-testid="tweet" role="article">
+      <div data-testid="User-Name"><div><a href="/fay"><span>Fay</span></a></div>
+       <div><a href="/fay"><span>@fay</span></a><a href="/fay/status/106"><time datetime="2026-11-11T05:00:00.000Z">7h</time></a></div></div>
+      <div data-testid="tweetText"><span>After module</span></div>
+     </article></div></div></div>
+
+    <!-- 11. Premium upsell cell in timeline -->
+    <div data-testid="cellInnerDiv" id="premium-upsell"><div><div><span>Upgrade to Premium+</span><a href="/i/premium_sign_up"><span>Subscribe</span></a></div></div></div>
+
+   </div>
+  </div>
+ </main>
+ <div data-testid="sidebarColumn">
+  <aside id="side-premium" aria-label="Subscribe to Premium"><h2><span>Subscribe to Premium</span></h2><a href="/i/premium_sign_up"><span>Subscribe</span></a></aside>
+  <div id="side-trends">
+   <section aria-labelledby="h-trends"><h2 id="h-trends"><span>What’s happening</span></h2>
+    <div data-testid="trend" id="trend-organic"><div><span>Trending in Tech</span></div><div><span>#OrganicTrend</span></div></div>
+    <div data-testid="trend" id="trend-promoted"><div><span>#BuyStuff</span></div><div><span>Promoted by Acme</span></div></div>
+   </section>
+  </div>
+  <aside id="side-wtf" aria-label="Who to follow"><h2><span>Who to follow</span></h2>
+   <div data-testid="UserCell" id="side-user"><a href="/u3"><span>User Three</span></a></div>
+  </aside>
+ </div>
+</div>
+
+<pre id="results"></pre>
+<script>
+(async function () {
+  const $ = id => document.getElementById(id);
+  const results = [];
+  const ok = (name, cond, extra) => results.push({ name, pass: !!cond, extra });
+  const cat = id => $(id).getAttribute('data-xah-cat');
+  const hidden = el => getComputedStyle(el).display === 'none';
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const frames = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+  // --- start-up -------------------------------------------------------------
+  ok('xah-on is set synchronously at document_start (no ad flash)', window.__earlyOn);
+  await wait(150); await frames();
+  ok('xah-on still set after settings load (enabled=true)', document.documentElement.classList.contains('xah-on'));
+
+  // --- promoted posts ------------------------------------------------------
+  ok('organic post not tagged', !cat('organic-1'));
+  ok('"Ad" header label -> ad', cat('ad-label') === 'ad');
+  ok('tag lives on the outer cellInnerDiv', $('ad-label').matches('[data-testid="cellInnerDiv"][data-xah-cat]'));
+  ok('ad cellInnerDiv is display:none', hidden($('ad-label')));
+  ok('post text "Ad" is NOT an ad', !cat('organic-text-ad'));
+  ok('display name "Promoted" is NOT an ad', !cat('organic-name-promoted'));
+  ok('organic video (placementTracking + timestamp) NOT an ad', !cat('organic-video'));
+  ok('structural: placementTracking + no timestamp -> ad', cat('ad-structural') === 'ad');
+  ok('localized RU label on EN page -> ad (fallback)', cat('ad-ru') === 'ad');
+  ok('old-style "Promoted" footer -> ad', cat('ad-promoted-footer') === 'ad');
+  ok('quoted text "Promoted" is NOT an ad', !cat('organic-quote'));
+  ok('processed cells marked data-xah="1"', $('organic-1').getAttribute('data-xah') === '1' && $('ad-label').getAttribute('data-xah') === '1');
+  ok('organic posts stay visible', !hidden($('organic-1')) && !hidden($('organic-video')));
+
+  // --- promoted accounts / trends -----------------------------------------
+  ok('promoted UserCell in WTF module -> ad', cat('wtf-user-promoted') === 'ad');
+  ok('promoted UserCell hidden even with suggestions toggle off', hidden($('wtf-user-promoted')));
+  ok('promoted trend -> ad', $('trend-promoted').getAttribute('data-xah-cat') === 'ad');
+  ok('promoted trend hidden', hidden($('trend-promoted')));
+  ok('organic trend untouched', !$('trend-organic').hasAttribute('data-xah-cat') && !hidden($('trend-organic')));
+
+  // --- optional categories: tagged but visible while toggles are off -------
+  ok('WTF heading tagged suggest', cat('wtf-head') === 'suggest');
+  ok('WTF organic user tagged suggest', cat('wtf-user1') === 'suggest');
+  ok('WTF "Show more" tagged suggest', cat('wtf-more') === 'suggest');
+  ok('post after WTF module not tagged', !cat('organic-after-wtf'));
+  ok('sidebar WTF tagged suggest', $('side-wtf').getAttribute('data-xah-cat') === 'suggest');
+  ok('sidebar premium card tagged sidecards', $('side-premium').getAttribute('data-xah-cat') === 'sidecards');
+  ok('timeline premium upsell tagged premium', cat('premium-upsell') === 'premium');
+  ok('optional items visible by default',
+     !hidden($('wtf-head')) && !hidden($('side-wtf')) && !hidden($('side-premium')) &&
+     !hidden($('premium-upsell')) && !hidden($('nav-grok')) && !hidden($('nav-premium')));
+
+  // --- counts ---------------------------------------------------------------
+  let c = await __ask({ type: 'xah:getCount' });
+  ok('tab count = 6 ads (4 posts + 1 account + 1 trend)', c && c.tab === 6, JSON.stringify(c));
+
+  // --- optional toggles apply live -----------------------------------------
+  __setSetting('optSuggest', true); await frames();
+  ok('optSuggest hides WTF module (timeline + sidebar)', hidden($('wtf-head')) && hidden($('wtf-user1')) && hidden($('wtf-more')) && hidden($('side-wtf')));
+  ok('optSuggest leaves following post visible', !hidden($('organic-after-wtf')));
+  __setSetting('optSidecards', true); await frames();
+  ok('optSidecards hides sidebar premium card', hidden($('side-premium')));
+  ok('optSidecards does not hide timeline upsell', !hidden($('premium-upsell')));
+  __setSetting('optPremium', true); await frames();
+  ok('optPremium hides timeline upsell + nav Premium link', hidden($('premium-upsell')) && hidden($('nav-premium')));
+  __setSetting('optGrok', true); await frames();
+  ok('optGrok hides Grok nav link', hidden($('nav-grok')));
+  ok('Home nav link untouched', !hidden($('nav-home')));
+  c = await __ask({ type: 'xah:getCount' });
+  ok('tab count grows when optional categories enabled', c && c.tab > 6, JSON.stringify(c));
+  ['optSuggest', 'optSidecards', 'optPremium', 'optGrok'].forEach(k => __setSetting(k, false));
+  await frames();
+  ok('optional toggles off again -> visible', !hidden($('wtf-head')) && !hidden($('nav-grok')) && !hidden($('premium-upsell')));
+
+  // --- master switch + debug ----------------------------------------------
+  __setSetting('enabled', false); await frames();
+  ok('master off -> ads visible live', !hidden($('ad-label')) && !hidden($('trend-promoted')));
+  __setSetting('enabled', true); await frames();
+  ok('master on -> ads hidden live', hidden($('ad-label')));
+  __setSetting('debug', true); await frames();
+  const cs = getComputedStyle($('ad-label'));
+  ok('debug: ad visible with red outline', !hidden($('ad-label')) && cs.outlineStyle === 'solid' && cs.outlineColor === 'rgb(255, 0, 0)', cs.outlineColor);
+  ok('debug: organic post has no outline', getComputedStyle($('organic-1')).outlineStyle === 'none');
+  __setSetting('debug', false); await frames();
+  ok('debug off -> ad hidden again', hidden($('ad-label')));
+
+  // --- dynamic content (MutationObserver, added nodes only) ----------------
+  const qsaBefore = window.__docQSA;
+  const cellCountBefore = document.querySelectorAll('[data-testid="cellInnerDiv"]').length;
+  const tl = $('timeline');
+
+  const tpl = document.createElement('template');
+  tpl.innerHTML = $('ad-label').outerHTML.replace('id="ad-label"', 'id="ad-dyn"')
+    .replace(/ data-xah(-cat)?="[^"]*"/g, '');
+  tl.appendChild(tpl.content.firstElementChild);
+  await frames();
+  ok('dynamically added ad gets tagged', cat('ad-dyn') === 'ad');
+
+  // Cell added empty first, content rendered later (React lazy render).
+  const lazy = document.createElement('div');
+  lazy.setAttribute('data-testid', 'cellInnerDiv'); lazy.id = 'ad-lazy';
+  tl.appendChild(lazy);
+  await frames();
+  ok('empty cell not marked processed yet', !lazy.hasAttribute('data-xah'));
+  const inner = document.createElement('template');
+  inner.innerHTML = $('ad-ru').innerHTML;
+  lazy.appendChild(inner.content.firstElementChild);
+  await frames();
+  ok('lazily-rendered ad gets tagged', cat('ad-lazy') === 'ad');
+
+  // Organic post appended dynamically.
+  const org = document.createElement('template');
+  org.innerHTML = $('organic-1').outerHTML.replace('id="organic-1"', 'id="organic-dyn"')
+    .replace(/ data-xah(-cat)?="[^"]*"/g, '');
+  tl.appendChild(org.content.firstElementChild);
+  await frames();
+  ok('dynamically added organic post not tagged', !cat('organic-dyn') && $('organic-dyn').getAttribute('data-xah') === '1');
+
+  // Unrelated mutation inside an already-processed cell must not re-count.
+  $('ad-label').querySelector('[data-testid="tweetText"]').appendChild(document.createElement('span'));
+  await frames();
+  c = await __ask({ type: 'xah:getCount' });
+  ok('processed ad not counted twice; tab count = 8', c && c.tab === 8, JSON.stringify(c));
+  ok('no document-wide querySelectorAll after start-up', window.__docQSA - qsaBefore === 1, 'calls=' + (window.__docQSA - qsaBefore)); // 1 = our own count above
+  ok('no nodes removed', document.querySelectorAll('[data-testid="cellInnerDiv"]').length === cellCountBefore + 3);
+
+  // --- lifetime total persisted to storage.local (throttled) -------------
+  await wait(2300);
+  const total = __stub.local.totalHidden;
+  ok('lifetime total persisted to chrome.storage.local.totalHidden', typeof total === 'number' && total >= 8, 'total=' + total);
+  ok('total writes are throttled (<= 3 writes)', __stub.localSets.length <= 3, 'writes=' + __stub.localSets.length);
+  c = await __ask({ type: 'xah:getCount' });
+  ok('count response includes total', c && typeof c.total === 'number' && c.total >= 8, JSON.stringify(c));
+
+  // --- report ---------------------------------------------------------------
+  const failed = results.filter(r => !r.pass);
+  $('results').textContent = results.map(r => (r.pass ? 'PASS ' : 'FAIL ') + r.name + (r.extra && !r.pass ? '  [' + r.extra + ']' : '')).join('\n')
+    + '\nRESULT: ' + (failed.length ? 'FAIL' : 'PASS') + ' ' + (results.length - failed.length) + '/' + results.length;
+  document.title = failed.length ? 'FAIL' : 'PASS';
+})().catch(e => {
+  document.getElementById('results').textContent = 'RESULT: FAIL (exception) ' + e.stack;
+  document.title = 'FAIL';
+});
+</script>
+</body>
+</html>

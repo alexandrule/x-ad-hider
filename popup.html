@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>X Ad Hider</title>
+<link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <h1>X Ad Hider</h1>
+    <label class="switch master" title="Master switch">
+      <input type="checkbox" id="enabled">
+      <span class="slider"></span>
+    </label>
+  </header>
+
+  <section class="stats">
+    <div><span class="num" id="tabCount">—</span><span class="lbl">hidden on this tab</span></div>
+    <div><span class="num" id="totalCount">0</span><span class="lbl">hidden in total</span></div>
+  </section>
+
+  <section class="opts" id="opts">
+    <p class="hint">Promoted posts, accounts and trends are always hidden. Also hide:</p>
+    <label class="row"><span>Premium / Verified upsells</span><span class="switch"><input type="checkbox" id="optPremium"><span class="slider"></span></span></label>
+    <label class="row"><span>Subscribe &amp; Get Verified sidebar cards</span><span class="switch"><input type="checkbox" id="optSidecards"><span class="slider"></span></span></label>
+    <label class="row"><span>Who to follow, Relevant people, Topics</span><span class="switch"><input type="checkbox" id="optSuggest"><span class="slider"></span></span></label>
+    <label class="row"><span>Grok / AI entry points</span><span class="switch"><input type="checkbox" id="optGrok"><span class="slider"></span></span></label>
+    <hr>
+    <label class="row"><span>Show hidden items (debug outline)</span><span class="switch"><input type="checkbox" id="debug"><span class="slider"></span></span></label>
+  </section>
+
+  <footer>No network requests. No analytics.</footer>
+  <script src="popup.js"></script>
+</body>
+</html>
