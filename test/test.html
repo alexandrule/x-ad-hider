@@ -138,6 +138,34 @@ Document.prototype.querySelectorAll = function (...a) { window.__docQSA++; retur
       <div data-testid="tweetText"><span>Купите</span></div>
      </article></div></div></div>
 
+    <!-- 7b. Promoted post: "Ad from <domain>" footer under the media, no header label,
+         has its own timestamp and no placementTracking (so the structural check can't catch it) -->
+    <div data-testid="cellInnerDiv" id="ad-from-footer"><div><div>
+     <article data-testid="tweet" role="article">
+      <div data-testid="User-Name"><div><a href="/uaprad"><span>UAPRAD</span></a></div>
+       <div><a href="/uaprad"><span>@UAPRAD</span></a><a href="/uaprad/status/201"><time datetime="2026-11-11T06:00:00.000Z">6h</time></a></div></div>
+      <div data-testid="tweetText"><span>Calling all UFO/UAP enthusiasts!</span></div>
+      <div data-testid="tweetPhoto"><img alt="Image"></div>
+      <div><span>Ad from uaprad.org</span></div>
+     </article></div></div></div>
+
+    <!-- 7c. Same, but the domain is a separate link: leaf span is just "Ad from" -->
+    <div data-testid="cellInnerDiv" id="ad-from-link"><div><div>
+     <article data-testid="tweet" role="article">
+      <div data-testid="User-Name"><div><a href="/shop"><span>Shop</span></a></div>
+       <div><a href="/shop"><span>@shop</span></a><a href="/shop/status/202"><time datetime="2026-11-11T05:00:00.000Z">7h</time></a></div></div>
+      <div data-testid="tweetText"><span>New drop</span></div>
+      <div><span>Ad from </span><a href="https://shop.example"><span>shop.example</span></a></div>
+     </article></div></div></div>
+
+    <!-- 7d. Organic post whose text says "Ad from example.com" -->
+    <div data-testid="cellInnerDiv" id="organic-text-ad-from"><div><div>
+     <article data-testid="tweet" role="article">
+      <div data-testid="User-Name"><div><a href="/dave"><span>Dave</span></a></div>
+       <div><a href="/dave"><span>@dave</span></a><a href="/dave/status/203"><time datetime="2026-11-11T04:00:00.000Z">8h</time></a></div></div>
+      <div data-testid="tweetText"><span>Ad from example.com</span></div>
+     </article></div></div></div>
+
     <!-- 8. Old-style "Promoted" footer label -->
     <div data-testid="cellInnerDiv" id="ad-promoted-footer"><div><div>
      <article data-testid="tweet" role="article">
@@ -213,6 +241,10 @@ Document.prototype.querySelectorAll = function (...a) { window.__docQSA++; retur
   ok('organic video (placementTracking + timestamp) NOT an ad', !cat('organic-video'));
   ok('structural: placementTracking + no timestamp -> ad', cat('ad-structural') === 'ad');
   ok('localized RU label on EN page -> ad (fallback)', cat('ad-ru') === 'ad');
+  ok('"Ad from <domain>" footer -> ad', cat('ad-from-footer') === 'ad');
+  ok('"Ad from <domain>" footer hidden', hidden($('ad-from-footer')));
+  ok('"Ad from" + domain link -> ad', cat('ad-from-link') === 'ad');
+  ok('post text "Ad from example.com" is NOT an ad', !cat('organic-text-ad-from'));
   ok('old-style "Promoted" footer -> ad', cat('ad-promoted-footer') === 'ad');
   ok('quoted text "Promoted" is NOT an ad', !cat('organic-quote'));
   ok('processed cells marked data-xah="1"', $('organic-1').getAttribute('data-xah') === '1' && $('ad-label').getAttribute('data-xah') === '1');
@@ -239,7 +271,7 @@ Document.prototype.querySelectorAll = function (...a) { window.__docQSA++; retur
 
   // --- counts ---------------------------------------------------------------
   let c = await __ask({ type: 'xah:getCount' });
-  ok('tab count = 6 ads (4 posts + 1 account + 1 trend)', c && c.tab === 6, JSON.stringify(c));
+  ok('tab count = 8 ads (6 posts + 1 account + 1 trend)', c && c.tab === 8, JSON.stringify(c));
 
   // --- optional toggles apply live -----------------------------------------
   __setSetting('optSuggest', true); await frames();
@@ -307,7 +339,7 @@ Document.prototype.querySelectorAll = function (...a) { window.__docQSA++; retur
   $('ad-label').querySelector('[data-testid="tweetText"]').appendChild(document.createElement('span'));
   await frames();
   c = await __ask({ type: 'xah:getCount' });
-  ok('processed ad not counted twice; tab count = 8', c && c.tab === 8, JSON.stringify(c));
+  ok('processed ad not counted twice; tab count = 10', c && c.tab === 10, JSON.stringify(c));
   ok('no document-wide querySelectorAll after start-up', window.__docQSA - qsaBefore === 1, 'calls=' + (window.__docQSA - qsaBefore)); // 1 = our own count above
   ok('no nodes removed', document.querySelectorAll('[data-testid="cellInnerDiv"]').length === cellCountBefore + 3);
 

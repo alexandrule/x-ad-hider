@@ -47,7 +47,7 @@ Because of this split, toggling a setting only flips a class, so there is never 
 **Promoted posts.** The signals are checked in this order:
 
 1. **Stable `data-testid`s.** Every row is a `cellInnerDiv`, and the post inside it is an `article[data-testid="tweet"]`.
-2. **A visible label.** The extension looks for a leaf `<span>` whose trimmed text *exactly* matches a localized "Ad"/"Promoted" string. It skips spans inside links (display names), the post text (`tweetText`), quoted posts and link cards, so a post that just *says* "Ad" is not hidden. Strings for the page's `<html lang>` are tried first, then the strings for all languages.
+2. **A visible label.** The extension looks for a leaf `<span>` whose trimmed text *exactly* matches a localized "Ad"/"Promoted" string. It skips spans inside links (display names), the post text (`tweetText`), quoted posts and link cards, so a post that just *says* "Ad" is not hidden. Strings for the page's `<html lang>` are tried first, then the strings for all languages. Newer promoted posts have no header label, only a footer line under the media such as `Ad from acme.com`. A leaf span that *starts with* a localized `adFrom` prefix ("Ad from") also counts, whether the domain is in the same span or in a separate link. The same exclusions apply.
 3. **Structure.** If the post has a `placementTracking` wrapper **and** no timestamp link of its own (`a[href*="/status/"] time`), it is treated as an ad. Neither signal is used alone, because organic video posts also have `placementTracking`.
 
 **Promoted accounts and trends.** A `UserCell` or `trend` that contains the label, or the "Promoted by …" prefix, is tagged `ad`.
@@ -71,7 +71,7 @@ Everything you might need to change is in the `SELECTORS` and `LABELS` objects a
    - the post element → `SELECTORS.tweet`
    - the exact text of the "Ad"/"Promoted" span → add it to `LABELS.<lang>.ad`
    - whether `placementTracking` is still there, and what the timestamp link looks like → `SELECTORS.placement` / `SELECTORS.timestamp`
-3. **Adding a language:** add an entry such as `it: { ad: ['Annuncio', 'Promosso'], promotedBy: ['Promosso da'], modules: ['Chi seguire'] }`. The key is the language part of `<html lang>`.
+3. **Adding a language:** add an entry such as `it: { ad: ['Annuncio', 'Promosso'], promotedBy: ['Promosso da'], adFrom: ['Annuncio da'], modules: ['Chi seguire'] }`. The key is the language part of `<html lang>`.
 4. Never use the hashed CSS class names (`css-175oi2r`, `r-…`). They change all the time.
 5. Run the tests (below), reload the extension, and check again with debug mode on.
 
@@ -98,4 +98,4 @@ Set `CHROME=/path/to/chrome` if Chrome is not installed in the default macOS loc
 
 - Detection depends on X's `data-testid`s and label texts. When X renames either, update the config as described above.
 - Module headings and labels outside the eight bundled languages (EN, ES, FR, DE, RU, RO, PT, JA) only match through the structural signal for posts. Promoted accounts, promoted trends and modules are not detected in other languages until you add strings.
-- Some of the localized strings for modules and "Promoted by" are best-effort. Check them in your locale and correct them if needed.
+- Some of the localized strings for modules, "Promoted by" and "Ad from" are best-effort (only English "Ad from" is confirmed; there is no Japanese one, since the domain comes first there). Check them in your locale and correct them if needed.

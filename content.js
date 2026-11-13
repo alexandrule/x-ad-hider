@@ -32,21 +32,23 @@
 
   // Localized strings. `ad` = exact label text on a promoted item.
   // `promotedBy` = prefix used on promoted trends ("Promoted by Acme").
+  // `adFrom` = prefix of the footer line on newer promoted posts ("Ad from acme.com").
+  //   Only `en` is confirmed; the others are best-effort guesses.
   // `modules` = headings of suggestion modules (optional "suggest" category).
   const LABELS = {
-    en: { ad: ['Ad', 'Promoted'], promotedBy: ['Promoted by'],
+    en: { ad: ['Ad', 'Promoted'], promotedBy: ['Promoted by'], adFrom: ['Ad from'],
           modules: ['Who to follow', 'Relevant people', 'Topics to follow', 'You might like'] },
-    es: { ad: ['Anuncio', 'Promocionado'], promotedBy: ['Promocionado por'],
+    es: { ad: ['Anuncio', 'Promocionado'], promotedBy: ['Promocionado por'], adFrom: ['Anuncio de'],
           modules: ['A quién seguir', 'Personas relevantes', 'Temas para seguir', 'Quizá te guste'] },
-    fr: { ad: ['Publicité', 'Sponsorisé'], promotedBy: ['Sponsorisé par'],
+    fr: { ad: ['Publicité', 'Sponsorisé'], promotedBy: ['Sponsorisé par'], adFrom: ['Publicité de'],
           modules: ['Suggestions', 'Personnes pertinentes', 'Sujets à suivre', 'Vous pourriez aimer'] },
-    de: { ad: ['Anzeige', 'Gesponsert'], promotedBy: ['Gesponsert von'],
+    de: { ad: ['Anzeige', 'Gesponsert'], promotedBy: ['Gesponsert von'], adFrom: ['Anzeige von'],
           modules: ['Wem folgen?', 'Relevante Personen', 'Themen zum Folgen', 'Das könnte dir gefallen'] },
-    ru: { ad: ['Реклама', 'Продвигается'], promotedBy: ['Продвигается', 'Реклама от'],
+    ru: { ad: ['Реклама', 'Продвигается'], promotedBy: ['Продвигается', 'Реклама от'], adFrom: ['Реклама от'],
           modules: ['Кого читать', 'Актуальные пользователи', 'Темы, которые стоит читать', 'Вам может понравиться'] },
-    ro: { ad: ['Reclamă', 'Promovat'], promotedBy: ['Promovat de'],
+    ro: { ad: ['Reclamă', 'Promovat'], promotedBy: ['Promovat de'], adFrom: ['Reclamă de la'],
           modules: ['Pe cine să urmărești', 'Persoane relevante', 'Subiecte de urmărit', 'S-ar putea să-ți placă'] },
-    pt: { ad: ['Anúncio', 'Promovido'], promotedBy: ['Promovido por'],
+    pt: { ad: ['Anúncio', 'Promovido'], promotedBy: ['Promovido por'], adFrom: ['Anúncio de'],
           modules: ['Quem seguir', 'Pessoas relevantes', 'Tópicos para seguir', 'Você talvez goste'] },
     ja: { ad: ['広告', 'プロモーション'], promotedBy: ['プロモーション'],
           modules: ['おすすめユーザー', '関連性の高いアカウント', 'フォローするトピック', 'おすすめ'] },
@@ -90,10 +92,11 @@
   // Label matching (language-aware with fallback to all languages).
   // ===========================================================================
   const norm = s => (s || '').replace(/\s+/g, ' ').trim().toLowerCase();
-  const ALL = { ad: new Set(), promotedBy: [], modules: new Set() };
+  const ALL = { ad: new Set(), promotedBy: [], adFrom: [], modules: new Set() };
   for (const l of Object.values(LABELS)) {
     l.ad.forEach(s => ALL.ad.add(norm(s)));
     l.promotedBy.forEach(s => ALL.promotedBy.push(norm(s)));
+    (l.adFrom || []).forEach(s => ALL.adFrom.push(norm(s)));
     l.modules.forEach(s => ALL.modules.add(norm(s)));
   }
   let langCache = { lang: null, ad: null, modules: null };
@@ -107,6 +110,9 @@
   }
   const isAdLabel = t => { const p = primary(); return (p.ad && p.ad.has(t)) || ALL.ad.has(t); };
   const isModuleHeading = t => { const p = primary(); return (p.modules && p.modules.has(t)) || ALL.modules.has(t); };
+  const startsWithAny = (t, list) => list.some(p => t === p || t.startsWith(p + ' '));
+  // "Ad from acme.com" in one span, or "Ad from" with the domain in a separate link.
+  const isAdLabelOrAdFrom = t => isAdLabel(t) || startsWithAny(t, ALL.adFrom);
   const isPromotedBy = t => isAdLabel(t) || ALL.promotedBy.some(p => t.startsWith(p + ' ') || t === p);
 
   // Leaf <span>s inside `scope` that are not inside links, post text, quotes or cards.
@@ -136,7 +142,7 @@
   }
   function isPromotedTweet(article) {
     // 1+2: data-testid scope + visible localized label in the post chrome.
-    if (hasLabel(article, isAdLabel)) return true;
+    if (hasLabel(article, isAdLabelOrAdFrom)) return true;
     // 3: structural: tracking wrapper and no timestamp link of its own.
     return !!article.querySelector(SELECTORS.placement) && !hasOwnTimestamp(article);
   }
