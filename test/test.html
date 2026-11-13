@@ -138,7 +138,7 @@ Document.prototype.querySelectorAll = function (...a) { window.__docQSA++; retur
       <div data-testid="tweetText"><span>Купите</span></div>
      </article></div></div></div>
 
-    <!-- 7b. Promoted post: "Ad from <domain>" footer under the media, no header label,
+    <!-- 7b. Synthetic variant: "Ad from <domain>" footer in a plain span, no header label,
          has its own timestamp and no placementTracking (so the structural check can't catch it) -->
     <div data-testid="cellInnerDiv" id="ad-from-footer"><div><div>
      <article data-testid="tweet" role="article">
@@ -149,7 +149,7 @@ Document.prototype.querySelectorAll = function (...a) { window.__docQSA++; retur
       <div><span>Ad from uaprad.org</span></div>
      </article></div></div></div>
 
-    <!-- 7c. Same, but the domain is a separate link: leaf span is just "Ad from" -->
+    <!-- 7c. Synthetic variant: the domain is a separate link: leaf span is just "Ad from" -->
     <div data-testid="cellInnerDiv" id="ad-from-link"><div><div>
      <article data-testid="tweet" role="article">
       <div data-testid="User-Name"><div><a href="/shop"><span>Shop</span></a></div>
@@ -164,6 +164,25 @@ Document.prototype.querySelectorAll = function (...a) { window.__docQSA++; retur
       <div data-testid="User-Name"><div><a href="/dave"><span>Dave</span></a></div>
        <div><a href="/dave"><span>@dave</span></a><a href="/dave/status/203"><time datetime="2026-11-11T04:00:00.000Z">8h</time></a></div></div>
       <div data-testid="tweetText"><span>Ad from example.com</span></div>
+     </article></div></div></div>
+
+    <!-- 7e. Real markup (x.com, 2026-11-13): "Ad from" + domain are bare text nodes inside
+         the card's footer link in card.spineClickTarget; own timestamp, no placementTracking -->
+    <div data-testid="cellInnerDiv" id="ad-from-spine-link"><div><div>
+     <article data-testid="tweet" role="article">
+      <div data-testid="User-Name"><div><a href="/vovu"><span>Vladimir</span></a></div>
+       <div><a href="/vovu"><span>@vovu</span></a><a href="/vovu/status/204"><time datetime="2026-11-13T04:00:00.000Z">8h</time></a></div></div>
+      <div data-testid="tweetText"><span>ok. testing it: $30 free</span></div>
+      <div data-testid="card.wrapper"><div><span>Your 24/7 outreach agent</span></div></div>
+      <div data-testid="card.spineClickTarget"><div><div><a role="link" href="https://t.co/x">Ad from<!-- -->explee.com</a></div></div></div>
+     </article></div></div></div>
+
+    <!-- 7f. Organic post with a link in its text whose text is "Ad from example.com" -->
+    <div data-testid="cellInnerDiv" id="organic-text-link-ad-from"><div><div>
+     <article data-testid="tweet" role="article">
+      <div data-testid="User-Name"><div><a href="/erin"><span>Erin</span></a></div>
+       <div><a href="/erin"><span>@erin</span></a><a href="/erin/status/205"><time datetime="2026-11-13T03:00:00.000Z">9h</time></a></div></div>
+      <div data-testid="tweetText"><span>see </span><a href="https://t.co/y">Ad from example.com</a></div>
      </article></div></div></div>
 
     <!-- 8. Old-style "Promoted" footer label -->
@@ -245,6 +264,9 @@ Document.prototype.querySelectorAll = function (...a) { window.__docQSA++; retur
   ok('"Ad from <domain>" footer hidden', hidden($('ad-from-footer')));
   ok('"Ad from" + domain link -> ad', cat('ad-from-link') === 'ad');
   ok('post text "Ad from example.com" is NOT an ad', !cat('organic-text-ad-from'));
+  ok('"Ad from" footer link in card spine (real markup) -> ad', cat('ad-from-spine-link') === 'ad');
+  ok('"Ad from" footer link in card spine hidden', hidden($('ad-from-spine-link')));
+  ok('link in post text "Ad from example.com" is NOT an ad', !cat('organic-text-link-ad-from'));
   ok('old-style "Promoted" footer -> ad', cat('ad-promoted-footer') === 'ad');
   ok('quoted text "Promoted" is NOT an ad', !cat('organic-quote'));
   ok('processed cells marked data-xah="1"', $('organic-1').getAttribute('data-xah') === '1' && $('ad-label').getAttribute('data-xah') === '1');
@@ -271,7 +293,7 @@ Document.prototype.querySelectorAll = function (...a) { window.__docQSA++; retur
 
   // --- counts ---------------------------------------------------------------
   let c = await __ask({ type: 'xah:getCount' });
-  ok('tab count = 8 ads (6 posts + 1 account + 1 trend)', c && c.tab === 8, JSON.stringify(c));
+  ok('tab count = 9 ads (7 posts + 1 account + 1 trend)', c && c.tab === 9, JSON.stringify(c));
 
   // --- optional toggles apply live -----------------------------------------
   __setSetting('optSuggest', true); await frames();
@@ -339,7 +361,7 @@ Document.prototype.querySelectorAll = function (...a) { window.__docQSA++; retur
   $('ad-label').querySelector('[data-testid="tweetText"]').appendChild(document.createElement('span'));
   await frames();
   c = await __ask({ type: 'xah:getCount' });
-  ok('processed ad not counted twice; tab count = 10', c && c.tab === 10, JSON.stringify(c));
+  ok('processed ad not counted twice; tab count = 11', c && c.tab === 11, JSON.stringify(c));
   ok('no document-wide querySelectorAll after start-up', window.__docQSA - qsaBefore === 1, 'calls=' + (window.__docQSA - qsaBefore)); // 1 = our own count above
   ok('no nodes removed', document.querySelectorAll('[data-testid="cellInnerDiv"]').length === cellCountBefore + 3);
 

@@ -129,6 +129,19 @@
     for (const span of labelSpans(scope)) if (test(norm(span.textContent))) return true;
     return false;
   }
+  // Text of an element's own text-node children (not descendants). Display-name
+  // links keep their text in child spans, so their own text is empty.
+  const ownText = el => norm([...el.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join(' '));
+  // Real "Ad from <domain>" footer: bare text nodes inside the card's footer link
+  // (in card.spineClickTarget). Not scoped to that testid in case X moves it.
+  function hasAdFromLink(article) {
+    for (const a of article.querySelectorAll('a')) {
+      const skip = a.closest(`${SELECTORS.tweetText}, ${SELECTORS.quote}`);
+      if (skip && article.contains(skip)) continue;
+      if (startsWithAny(ownText(a), ALL.adFrom)) return true;
+    }
+    return false;
+  }
 
   // ===========================================================================
   // Classification
@@ -142,7 +155,7 @@
   }
   function isPromotedTweet(article) {
     // 1+2: data-testid scope + visible localized label in the post chrome.
-    if (hasLabel(article, isAdLabelOrAdFrom)) return true;
+    if (hasLabel(article, isAdLabelOrAdFrom) || hasAdFromLink(article)) return true;
     // 3: structural: tracking wrapper and no timestamp link of its own.
     return !!article.querySelector(SELECTORS.placement) && !hasOwnTimestamp(article);
   }
